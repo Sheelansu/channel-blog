@@ -4,6 +4,7 @@ import { withAccelerate } from '@prisma/extension-accelerate'
 import { env } from 'hono/adapter'
 import { sign, verify } from 'hono/jwt'
 import { authMiddleware } from './middleware/authMiddleware'
+import { createPrisma } from './lib/prisma'
 
 type AuthUser = {
   id: string
@@ -22,9 +23,7 @@ app.post('/api/v1/signup', async (c) => {
   const { DATABASE_URL } = env<{ DATABASE_URL: string }>(c)
   const { SERVER_SECRET } = env<{ SERVER_SECRET: string }>(c)
   
-  const prisma = new PrismaClient({
-      datasourceUrl: DATABASE_URL,
-  }).$extends(withAccelerate())
+  const prisma =  createPrisma(DATABASE_URL)
 
   const body = await c.req.json()
   const user = await prisma.user.create({
@@ -46,9 +45,7 @@ app.post('/api/v1/signin', async (c) => {
   const { DATABASE_URL } = env<{ DATABASE_URL: string }>(c)
   const { SERVER_SECRET } = env<{ SERVER_SECRET: string }>(c)
   
-  const prisma = new PrismaClient({
-      datasourceUrl: DATABASE_URL,
-  }).$extends(withAccelerate())
+  const prisma = createPrisma(DATABASE_URL)
 
   const body = await c.req.json()
   const user = await prisma.user.findUnique({
