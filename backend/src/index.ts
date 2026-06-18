@@ -3,23 +3,20 @@ import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
 import { env } from 'hono/adapter'
 import { sign, verify } from 'hono/jwt'
+import { authMiddleware } from './middleware/authMiddleware'
 
-const app = new Hono()
+type AuthUser = {
+  id: string
+  email: string
+}
 
-app.use('/api/v1/blog/*', async (c, next) => {
-  const { SERVER_SECRET } = env<{ SERVER_SECRET: string }>(c)
-  const header: string =  c.req.header("authorization") || ""
-  const token = header.split(" ")
-
-  const verJwt = await verify(token[1], SERVER_SECRET, 'HS256')
-  if (verJwt.id && token[0]=="Bearer") {
-    await next()
-  }else{
-    c.status(403)
-    return c.json({error: "Unauthorized"})
+type AppBindings = {
+  Variables: {
+    user: AuthUser
   }
-  
-})
+}
+
+const app = new Hono<AppBindings>()
 
 app.post('/api/v1/signup', async (c) => {
   const { DATABASE_URL } = env<{ DATABASE_URL: string }>(c)
@@ -37,7 +34,7 @@ app.post('/api/v1/signup', async (c) => {
     }
   })
 
-  const token = await sign({id: user.id, email: body.email}, SERVER_SECRET, 'HS256')
+  const token = await sign({id: user.id}, SERVER_SECRET, 'HS256')
 
   return c.json({
     jwt: token 
@@ -66,13 +63,17 @@ app.post('/api/v1/signin', async (c) => {
     return c.json({error: "user not found"})
   }
 
-  const token = await sign({id: user.id, email: body.email}, SERVER_SECRET)
+  const token = await sign({id: user.id}, SERVER_SECRET)
   return c.json({
     jwt: token 
   })
 })
 
+app.use('/api/v1/blog/*', authMiddleware)
+
+
 app.post('/api/v1/blog', (c) => {
+  const user = c.get('user') as AuthUser
   return c.text('Hello Hono!')
 })
 
