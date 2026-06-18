@@ -1,22 +1,22 @@
 import { createMiddleware } from 'hono/factory'
 import { env } from 'hono/adapter'
-import { sign, verify } from 'hono/jwt'
+import { verify } from 'hono/jwt'
 
-export const authMiddleware = createMiddleware<{
-    Variables: {
-        user: {
-            id: string,
-            email: string
-        }
-    }
-}>(async (c, next) => {
+type AuthUser = {
+  id: string
+}
+
+export const authMiddleware = createMiddleware(async (c, next) => {
   const { SERVER_SECRET } = env<{ SERVER_SECRET: string }>(c)
 
   const authHeader = c.req.header('authorization')
 
   if (!authHeader) {
     return c.json(
-      { error: 'Authorization header is missing.' },
+      {
+        error:
+          'Authorization header is required. Send a Bearer token in the Authorization header.',
+      },
       401
     )
   }
@@ -25,17 +25,27 @@ export const authMiddleware = createMiddleware<{
 
   if (scheme !== 'Bearer' || !token) {
     return c.json(
-      { error: 'Expected Bearer token in Authorization header.' },
+      {
+        error:
+          'Invalid authorization format. Expected: Authorization: Bearer <token>.',
+      },
       401
     )
   }
 
   try {
-    const payload = await verify(token, SERVER_SECRET, 'HS256')
+    const payload = await verify(
+      token,
+      SERVER_SECRET,
+      'HS256'
+    ) as AuthUser
 
-    if (!payload?.id) {
+    if (!payload.id ) {
       return c.json(
-        { error: 'Authenticated user identifier not found in token.' },
+        {
+          error:
+            'Token payload is missing required user information.',
+        },
         403
       )
     }
@@ -45,7 +55,10 @@ export const authMiddleware = createMiddleware<{
     await next()
   } catch {
     return c.json(
-      { error: 'Invalid or expired access token.' },
+      {
+        error:
+          'Access token is invalid, expired, or could not be verified.',
+      },
       401
     )
   }
