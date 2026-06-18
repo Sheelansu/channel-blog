@@ -1,65 +1,59 @@
-import { createMiddleware } from 'hono/factory'
-import { env } from 'hono/adapter'
-import { verify } from 'hono/jwt'
+import { createMiddleware } from "hono/factory";
+import { env } from "hono/adapter";
+import { verify } from "hono/jwt";
 
 type AuthUser = {
-  id: string
-}
+  id: string;
+};
 
 export const authMiddleware = createMiddleware(async (c, next) => {
-  const { SERVER_SECRET } = env<{ SERVER_SECRET: string }>(c)
+  const { SERVER_SECRET } = env<{ SERVER_SECRET: string }>(c);
 
-  const authHeader = c.req.header('authorization')
+  const authHeader = c.req.header("authorization");
 
   if (!authHeader) {
     return c.json(
       {
         error:
-          'Authorization header is required. Send a Bearer token in the Authorization header.',
+          "Authorization header is required. Send a Bearer token in the Authorization header.",
       },
-      401
-    )
+      401,
+    );
   }
 
-  const [scheme, token] = authHeader.split(' ')
+  const [scheme, token] = authHeader.split(" ");
 
-  if (scheme !== 'Bearer' || !token) {
+  if (scheme !== "Bearer" || !token) {
     return c.json(
       {
         error:
-          'Invalid authorization format. Expected: Authorization: Bearer <token>.',
+          "Invalid authorization format. Expected: Authorization: Bearer <token>.",
       },
-      401
-    )
+      401,
+    );
   }
 
   try {
-    const payload = await verify(
-      token,
-      SERVER_SECRET,
-      'HS256'
-    ) as AuthUser
+    const payload = (await verify(token, SERVER_SECRET, "HS256")) as AuthUser;
 
-    if (!payload.id ) {
+    if (!payload.id) {
       return c.json(
         {
-          error:
-            'Token payload is missing required user information.',
+          error: "Token payload is missing required user information.",
         },
-        403
-      )
+        403,
+      );
     }
 
-    c.set('user', payload)
+    c.set("user", payload);
 
-    await next()
+    await next();
   } catch {
     return c.json(
       {
-        error:
-          'Access token is invalid, expired, or could not be verified.',
+        error: "Access token is invalid, expired, or could not be verified.",
       },
-      401
-    )
+      401,
+    );
   }
-})
+});

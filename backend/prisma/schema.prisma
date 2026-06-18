@@ -15,11 +15,12 @@ datasource db {
 }
 
 model User {
-  id       String   @id @default(uuid())
-  email    String   @unique
-  name     String?
-  password String
-  posts    Post[]
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  password     String
+  posts        Post[]
+  refreshToken RefreshToken[]
 }
 
 model Post {
@@ -29,4 +30,13 @@ model Post {
   published Boolean  @default(false)
   author    User     @relation(fields: [authorId], references: [id])
   authorId  String
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
 }
