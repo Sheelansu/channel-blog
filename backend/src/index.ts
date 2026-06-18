@@ -1,85 +1,199 @@
-import { Hono } from 'hono'
-import { PrismaClient } from '@prisma/client/edge'
-import { withAccelerate } from '@prisma/extension-accelerate'
-import { env } from 'hono/adapter'
-import { sign, verify } from 'hono/jwt'
-import { authMiddleware } from './middleware/authMiddleware'
-import { createPrisma } from './lib/prisma'
+import { Hono } from "hono";
+import { env } from "hono/adapter";
+import { verify } from "hono/jwt";
+import { authMiddleware } from "./middleware/authMiddleware";
+import { createPrisma } from "./lib/prisma";
+import { hash, compare } from "bcryptjs";
+import { authSchema } from "./schemas/auth";
+import { createAccessToken, createRefreshToken } from "./lib/jwt";
 
 type AuthUser = {
-  id: string
-  email: string
-}
+  id: string;
+  email: string;
+};
 
 type AppBindings = {
   Variables: {
-    user: AuthUser
-  }
-}
+    user: AuthUser;
+  };
+};
 
-const app = new Hono<AppBindings>()
+const app = new Hono<AppBindings>();
 
-app.post('/api/v1/signup', async (c) => {
-  const { DATABASE_URL } = env<{ DATABASE_URL: string }>(c)
-  const { SERVER_SECRET } = env<{ SERVER_SECRET: string }>(c)
-  
-  const prisma =  createPrisma(DATABASE_URL)
+app.post("/api/v1/signup", async (c) => {
+  const { DATABASE_URL, SERVER_SECRET } = env<{
+    DATABASE_URL: string;
+    SERVER_SECRET: string;
+  }>(c);
 
-  const body = await c.req.json()
-  const user = await prisma.user.create({
-    data: {
-      email: body.email,
-      password: body.password
+  const prisma = createPrisma(DATABASE_URL);
+
+  try {
+    const body = authSchema.parse(await c.req.json());
+
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email: body.email,
+      },
+    });
+
+    if (existingUser) {
+      return c.json(
+        {
+          error: "An account already exists with this email address.",
+        },
+        409,
+      );
     }
-  })
 
-  const token = await sign({id: user.id}, SERVER_SECRET, 'HS256')
+    const hashedPassword = await hash(body.password, 10);
 
-  return c.json({
-    jwt: token 
-  })
-})
+    const user = await prisma.user.create({
+      data: {
+        email: body.email,
+        password: hashedPassword,
+      },
+    });
 
+    const accessToken = await createAccessToken(user.id, SERVER_SECRET);
 
-app.post('/api/v1/signin', async (c) => {
-  const { DATABASE_URL } = env<{ DATABASE_URL: string }>(c)
-  const { SERVER_SECRET } = env<{ SERVER_SECRET: string }>(c)
-  
-  const prisma = createPrisma(DATABASE_URL)
+    const refreshToken = await createRefreshToken(user.id, SERVER_SECRET);
 
-  const body = await c.req.json()
-  const user = await prisma.user.findUnique({
-    where: {
-      email: body.email,
-      password: body.password
+    return c.json(
+      {
+        accessToken,
+        refreshToken,
+      },
+      201,
+    );
+  } catch (error) {
+    return c.json(
+      {
+        error: "Invalid request payload.",
+      },
+      400,
+    );
+  }
+});
+
+app.post("/api/v1/signin", async (c) => {
+  const { DATABASE_URL, SERVER_SECRET } = env<{
+    DATABASE_URL: string;
+    SERVER_SECRET: string;
+  }>(c);
+
+  const prisma = createPrisma(DATABASE_URL);
+
+  try {
+    const body = authSchema.parse(await c.req.json());
+
+    const user = await prisma.user.findUnique({
+      where: {
+        email: body.email,
+      },
+    });
+
+    if (!user) {
+      return c.json(
+        {
+          error: "Invalid email or password.",
+        },
+        401,
+      );
     }
-  })
 
-  if (!user) {
-    c.status(403)
-    return c.json({error: "user not found"})
+    const validPassword = await compare(body.password, user.password);
+
+    if (!validPassword) {
+      return c.json(
+        {
+          error: "Invalid password or email.",
+        },
+        401,
+      );
+    }
+
+    const accessToken = await createAccessToken(user.id, SERVER_SECRET);
+
+    const refreshToken = await createRefreshToken(user.id, SERVER_SECRET);
+
+    return c.json({
+      accessToken,
+      refreshToken,
+    });
+  } catch {
+    return c.json(
+      {
+        error: "Invalid request payload.",
+      },
+      400,
+    );
+  }
+});
+
+app.post('/api/v1/refresh', async (c) => {
+  const { SERVER_SECRET } = env<{
+    SERVER_SECRET: string
+  }>(c)
+
+  const { refreshToken } = await c.req.json()
+
+  if (!refreshToken) {
+    return c.json(
+      {
+        error: 'Refresh token is required.',
+      },
+      400
+    )
   }
 
-  const token = await sign({id: user.id}, SERVER_SECRET)
-  return c.json({
-    jwt: token 
-  })
+  try {
+    const payload = await verify(
+      refreshToken,
+      SERVER_SECRET,
+      'HS256'
+    )
+
+    if (payload.type !== 'refresh') {
+      return c.json(
+        {
+          error: 'Invalid refresh token.',
+        },
+        401
+      )
+    }
+
+    const accessToken = await createAccessToken(
+      payload.id as string,
+      SERVER_SECRET
+    )
+
+    return c.json({
+      accessToken,
+    })
+  } catch {
+    return c.json(
+      {
+        error: 'Refresh token is invalid or expired.',
+      },
+      401
+    )
+  }
 })
 
-app.use('/api/v1/blog/*', authMiddleware)
+app.use("/api/v1/blog/*", authMiddleware);
 
+app.post("/api/v1/blog", (c) => {
+  const user = c.get("user") as AuthUser;
+  return c.text("Hello Hono!");
+});
 
-app.post('/api/v1/blog', (c) => {
-  const user = c.get('user') as AuthUser
-  return c.text('Hello Hono!')
-})
+app.put("/api/v1/blog", (c) => {
+  return c.text("Hello Hono!");
+});
 
-app.put('/api/v1/blog', (c) => {
-  return c.text('Hello Hono!')
-})
+app.get("/api/v1/blog/:id", (c) => {
+  return c.text("Hello Hono!");
+});
 
-app.get('/api/v1/blog/:id', (c) => {
-  return c.text('Hello Hono!')
-})
-
-export default app
+export default app;
