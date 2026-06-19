@@ -152,7 +152,7 @@ app.post('/api/v1/refresh', async (c) => {
       refreshToken,
       SERVER_SECRET,
       'HS256'
-    )
+    ) 
 
     if (payload.type !== 'refresh') {
       return c.json(
@@ -193,6 +193,10 @@ app.put("/api/v1/blog", (c) => {
 });
 
 app.get("/api/v1/blog/:id", (c) => {
+  return c.text("Hello Hono!");
+});
+
+app.get("/api/v1/blog/bulk", (c) => {
   return c.text("Hello Hono!");
 });
 
