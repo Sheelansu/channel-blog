@@ -4,8 +4,9 @@ import { verify } from "hono/jwt";
 import { authMiddleware } from "./middleware/authMiddleware";
 import { createPrisma } from "./lib/prisma";
 import { hash, compare } from "bcryptjs";
-import { authSchema } from "./schemas/auth";
+import { authSchema } from "./schemas/signinAuth";
 import { createAccessToken, createRefreshToken } from "./lib/jwt";
+import { signupAuthSchema } from "./schemas/signupAuth";
 
 type AuthUser = {
   id: string;
@@ -29,7 +30,7 @@ app.post("/api/v1/signup", async (c) => {
   const prisma = createPrisma(DATABASE_URL);
 
   try {
-    const body = authSchema.parse(await c.req.json());
+    const body = signupAuthSchema.parse(await c.req.json());
 
     const existingUser = await prisma.user.findUnique({
       where: {
@@ -52,12 +53,23 @@ app.post("/api/v1/signup", async (c) => {
       data: {
         email: body.email,
         password: hashedPassword,
+        name: body.name
       },
     });
 
     const accessToken = await createAccessToken(user.id, SERVER_SECRET);
 
     const refreshToken = await createRefreshToken(user.id, SERVER_SECRET);
+
+    const rToken = await prisma.refreshToken.create({
+      data: {
+        token: refreshToken,
+        userId: user.id,
+        expiresAt: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ),
+      }
+    })
 
     return c.json(
       {
