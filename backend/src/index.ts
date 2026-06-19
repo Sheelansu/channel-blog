@@ -19,6 +19,8 @@ type AppBindings = {
   };
 };
 
+const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
 const app = new Hono<AppBindings>();
 
 app.post("/api/v1/signup", async (c) => {
@@ -53,7 +55,7 @@ app.post("/api/v1/signup", async (c) => {
       data: {
         email: body.email,
         password: hashedPassword,
-        name: body.name
+        name: body.name,
       },
     });
 
@@ -61,15 +63,13 @@ app.post("/api/v1/signup", async (c) => {
 
     const refreshToken = await createRefreshToken(user.id, SERVER_SECRET);
 
-    const rToken = await prisma.refreshToken.create({
+    await prisma.refreshToken.create({
       data: {
         token: refreshToken,
         userId: user.id,
-        expiresAt: new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000
-        ),
-      }
-    })
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+      },
+    });
 
     return c.json(
       {
@@ -129,6 +129,22 @@ app.post("/api/v1/signin", async (c) => {
 
     const refreshToken = await createRefreshToken(user.id, SERVER_SECRET);
 
+    await prisma.$transaction([
+      prisma.refreshToken.deleteMany({
+        where: {
+          userId: user.id,
+        },
+      }),
+
+      prisma.refreshToken.create({
+        data: {
+          token: refreshToken,
+          userId: user.id,
+          expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+        },
+      }),
+    ]);
+
     return c.json({
       accessToken,
       refreshToken,
@@ -143,55 +159,51 @@ app.post("/api/v1/signin", async (c) => {
   }
 });
 
-app.post('/api/v1/refresh', async (c) => {
+app.post("/api/v1/refresh", async (c) => {
   const { SERVER_SECRET } = env<{
-    SERVER_SECRET: string
-  }>(c)
+    SERVER_SECRET: string;
+  }>(c);
 
-  const { refreshToken } = await c.req.json()
+  const { refreshToken } = await c.req.json();
 
   if (!refreshToken) {
     return c.json(
       {
-        error: 'Refresh token is required.',
+        error: "Refresh token is required.",
       },
-      400
-    )
+      400,
+    );
   }
 
   try {
-    const payload = await verify(
-      refreshToken,
-      SERVER_SECRET,
-      'HS256'
-    ) 
+    const payload = await verify(refreshToken, SERVER_SECRET, "HS256");
 
-    if (payload.type !== 'refresh') {
+    if (payload.type !== "refresh") {
       return c.json(
         {
-          error: 'Invalid refresh token.',
+          error: "Invalid refresh token.",
         },
-        401
-      )
+        401,
+      );
     }
 
     const accessToken = await createAccessToken(
       payload.id as string,
-      SERVER_SECRET
-    )
+      SERVER_SECRET,
+    );
 
     return c.json({
       accessToken,
-    })
+    });
   } catch {
     return c.json(
       {
-        error: 'Refresh token is invalid or expired.',
+        error: "Refresh token is invalid or expired.",
       },
-      401
-    )
+      401,
+    );
   }
-})
+});
 
 app.use("/api/v1/blog/*", authMiddleware);
 
