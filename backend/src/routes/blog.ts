@@ -50,11 +50,13 @@ blogRouter.put("/", async (c) => {
   const prisma = createPrisma(DATABASE_URL);
   const body = blogPostSchema.parse(await c.req.json());
 
-  const blog = await prisma.post.create({
+  const blog = await prisma.post.update({
+    where: {
+        id: body.id
+    }
     data: {
       title: body.title,
       content: body.content,
-      authorId: user.id,
     },
   });
 
