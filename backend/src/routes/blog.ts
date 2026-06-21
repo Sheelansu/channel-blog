@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { createPrisma } from "../lib/prisma";
 import { env } from "hono/adapter";
-import { blogPostSchema } from "../schemas/blogPost";
+import { blogGetSchema, blogPostSchema, blogPutSchema } from "../schemas/blogZod";
 
 type AuthUser = {
   id: string;
@@ -17,8 +17,10 @@ type AppBindings = {
 
 export const blogRouter = new Hono<AppBindings>();
 
+//Middleware
 blogRouter.use("/*", authMiddleware);
 
+//Blog post
 blogRouter.post("/", async (c) => {
   const { DATABASE_URL } = env<{
     DATABASE_URL: string;
@@ -41,19 +43,21 @@ blogRouter.post("/", async (c) => {
   });
 });
 
+//Blog put|update
 blogRouter.put("/", async (c) => {
   const { DATABASE_URL } = env<{
     DATABASE_URL: string;
   }>(c);
 
-  const user = c.get("user") as AuthUser;
   const prisma = createPrisma(DATABASE_URL);
-  const body = blogPostSchema.parse(await c.req.json());
+  const body = blogPutSchema.parse(await c.req.json());
+  const user = c.get("user") as AuthUser;
 
   const blog = await prisma.post.update({
     where: {
-        id: body.id
-    }
+        id: body.id,
+        authorId: user.id
+    },
     data: {
       title: body.title,
       content: body.content,
@@ -65,10 +69,42 @@ blogRouter.put("/", async (c) => {
   });
 });
 
-blogRouter.get("/:id", (c) => {
-  return c.text("Hello Hono!");
+blogRouter.get("/:id", async(c) => {
+  const { DATABASE_URL } = env<{
+    DATABASE_URL: string;
+  }>(c);
+
+  const prisma = createPrisma(DATABASE_URL);
+  const body = blogGetSchema.parse(await c.req.json());
+
+  try{
+    const blog = await prisma.post.findFirst({
+    where: {
+        id: body.id,
+    },
+  });
+
+  return c.json({
+    blog
+  });
+  } catch {
+    return c.json({
+      message: "Something went wrong in fetching blog post."
+    })
+  }
 });
 
-blogRouter.get("/bulk", (c) => {
-  return c.text("Hello Hono!");
+//Pagination to be added after testing routes
+blogRouter.get("/bulk", async (c) => {
+  const { DATABASE_URL } = env<{
+    DATABASE_URL: string;
+  }>(c);
+
+  const prisma = createPrisma(DATABASE_URL);
+
+  const blogs = await prisma.post.findMany()
+
+  return c.json({
+    blogs
+  })
 });
