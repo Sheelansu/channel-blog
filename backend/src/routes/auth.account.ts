@@ -7,11 +7,12 @@ import { authSchema } from "../schemas/signinAuth";
 import { createAccessToken, createRefreshToken } from "../lib/jwt";
 import { signupAuthSchema } from "../schemas/signupAuth";
 
-export const authRouter = new Hono()
+export const authAcountRouter = new Hono()
 
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-authRouter.post("/signup", async (c) => {
+//signup
+authAcountRouter.post("/signup", async (c) => {
   const { DATABASE_URL, SERVER_SECRET } = env<{
     DATABASE_URL: string;
     SERVER_SECRET: string;
@@ -76,7 +77,8 @@ authRouter.post("/signup", async (c) => {
   }
 });
 
-authRouter.post("/api/v1/signin", async (c) => {
+//signin
+authAcountRouter.post("/api/v1/signin", async (c) => {
   const { DATABASE_URL, SERVER_SECRET } = env<{
     DATABASE_URL: string;
     SERVER_SECRET: string;
@@ -147,7 +149,8 @@ authRouter.post("/api/v1/signin", async (c) => {
   }
 });
 
-authRouter.post("/api/v1/refresh", async (c) => {
+//refresh
+authAcountRouter.post("/api/v1/refresh", async (c) => {
   const { SERVER_SECRET } = env<{
     SERVER_SECRET: string;
   }>(c);
