@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import { authMiddleware } from "../middleware/authMiddleware";
+import { createPrisma } from "../lib/prisma";
+import { env } from "hono/adapter";
 
 type AuthUser = {
   id: string;
@@ -14,11 +16,16 @@ type AppBindings = {
 
 export const blogRouter = new Hono<AppBindings>();
 
+
 blogRouter.use("/*", authMiddleware);
 
 blogRouter.post("/", (c) => {
+    const { DATABASE_URL, SERVER_SECRET } = env<{
+    DATABASE_URL: string;
+    SERVER_SECRET: string;
+  }>(c);
   const user = c.get("user") as AuthUser;
-  return c.text("Hello Hono!");
+  const prisma = createPrisma(DATABASE_URL);
 });
 
 blogRouter.put("/", (c) => {
