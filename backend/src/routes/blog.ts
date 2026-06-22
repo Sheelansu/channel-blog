@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { createPrisma } from "../lib/prisma";
 import { env } from "hono/adapter";
-import {  blogPostSchema, blogPutSchema } from "../schemas/blogZod";
+import { blogPostSchema, blogPutSchema } from "../schemas/blogZod";
 
 type AuthUser = {
   id: string;
@@ -55,8 +55,8 @@ blogRouter.put("/", async (c) => {
 
   const blog = await prisma.post.update({
     where: {
-        id: body.id,
-        authorId: user.id
+      id: body.id,
+      authorId: user.id,
     },
     data: {
       title: body.title,
@@ -77,14 +77,30 @@ blogRouter.get("/bulk", async (c) => {
 
   const prisma = createPrisma(DATABASE_URL);
 
-  const blogs = await prisma.post.findMany()
+  const page = Number(c.req.query("page")) || 1;
+  const limit = Number(c.req.query("limit")) || 10;
+
+  const [blogs, totalBlogs] = await Promise.all([
+    prisma.post.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+    prisma.post.count(),
+  ]);
 
   return c.json({
-    blogs
-  })
+    page,
+    limit,
+    totalBlogs,
+    totalPages: Math.ceil(totalBlogs / limit),
+    blogs,
+  });
 });
 
-blogRouter.get("/:id", async(c) => {
+blogRouter.get("/:id", async (c) => {
   const { DATABASE_URL } = env<{
     DATABASE_URL: string;
   }>(c);
@@ -92,20 +108,19 @@ blogRouter.get("/:id", async(c) => {
   const prisma = createPrisma(DATABASE_URL);
   const id = c.req.param("id");
 
-  try{
+  try {
     const blog = await prisma.post.findFirst({
-    where: {
-        id
-    },
-  });
+      where: {
+        id,
+      },
+    });
 
-  return c.json({
-    blog
-  });
+    return c.json({
+      blog,
+    });
   } catch {
     return c.json({
-      message: "Something went wrong in fetching blog post."
-    })
+      message: "Something went wrong in fetching blog post.",
+    });
   }
 });
-
