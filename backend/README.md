@@ -19,3 +19,7 @@ Pass the `CloudflareBindings` as generics when instantiating `Hono`:
 // src/index.ts
 const app = new Hono<{ Bindings: CloudflareBindings }>()
 ```
+`
+Cloudflare prod url:
+`
+https://backend.shergaming-op.workers.dev/api/v1/blog/bulk?page=1&limit=6
