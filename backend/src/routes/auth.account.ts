@@ -3,9 +3,8 @@ import { env } from "hono/adapter";
 import { verify } from "hono/jwt";
 import { createPrisma } from "../lib/prisma";
 import { hash, compare } from "bcryptjs";
-import { authSchema } from "../schemas/signinAuth";
 import { createAccessToken, createRefreshToken } from "../lib/jwt";
-import { signupAuthSchema } from "../schemas/signupAuth";
+import { signinAuthSchema, signupAuthSchema } from "../schemas/signupAuth";
 
 export const authAcountRouter = new Hono()
 
@@ -87,7 +86,7 @@ authAcountRouter.post("/signin", async (c) => {
   const prisma = createPrisma(DATABASE_URL);
 
   try {
-    const body = authSchema.parse(await c.req.json());
+    const body = signinAuthSchema.parse(await c.req.json());
 
     const user = await prisma.user.findUnique({
       where: {
