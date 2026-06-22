@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { createPrisma } from "../lib/prisma";
 import { env } from "hono/adapter";
-import { blogGetSchema, blogPostSchema, blogPutSchema } from "../schemas/blogZod";
+import {  blogPostSchema, blogPutSchema } from "../schemas/blogZod";
 
 type AuthUser = {
   id: string;
@@ -26,7 +26,7 @@ blogRouter.post("/", async (c) => {
     DATABASE_URL: string;
   }>(c);
 
-  const user = c.get("user") as AuthUser;
+  const user = c.get("user");
   const prisma = createPrisma(DATABASE_URL);
   const body = blogPostSchema.parse(await c.req.json());
 
@@ -51,7 +51,7 @@ blogRouter.put("/", async (c) => {
 
   const prisma = createPrisma(DATABASE_URL);
   const body = blogPutSchema.parse(await c.req.json());
-  const user = c.get("user") as AuthUser;
+  const user = c.get("user");
 
   const blog = await prisma.post.update({
     where: {
@@ -69,31 +69,6 @@ blogRouter.put("/", async (c) => {
   });
 });
 
-blogRouter.get("/:id", async(c) => {
-  const { DATABASE_URL } = env<{
-    DATABASE_URL: string;
-  }>(c);
-
-  const prisma = createPrisma(DATABASE_URL);
-  const body = blogGetSchema.parse(await c.req.json());
-
-  try{
-    const blog = await prisma.post.findFirst({
-    where: {
-        id: body.id,
-    },
-  });
-
-  return c.json({
-    blog
-  });
-  } catch {
-    return c.json({
-      message: "Something went wrong in fetching blog post."
-    })
-  }
-});
-
 //Pagination to be added after testing routes
 blogRouter.get("/bulk", async (c) => {
   const { DATABASE_URL } = env<{
@@ -108,3 +83,29 @@ blogRouter.get("/bulk", async (c) => {
     blogs
   })
 });
+
+blogRouter.get("/:id", async(c) => {
+  const { DATABASE_URL } = env<{
+    DATABASE_URL: string;
+  }>(c);
+
+  const prisma = createPrisma(DATABASE_URL);
+  const id = c.req.param("id");
+
+  try{
+    const blog = await prisma.post.findFirst({
+    where: {
+        id
+    },
+  });
+
+  return c.json({
+    blog
+  });
+  } catch {
+    return c.json({
+      message: "Something went wrong in fetching blog post."
+    })
+  }
+});
+

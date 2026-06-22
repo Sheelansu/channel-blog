@@ -21,20 +21,21 @@ export const authMiddleware = createMiddleware(async (c, next) => {
     );
   }
 
-  const [scheme, token] = authHeader.split(" ");
-
-  if (scheme !== "Bearer" || !token) {
-    return c.json(
-      {
-        error:
-          "Invalid authorization format. Expected: Authorization: Bearer <token>.",
-      },
-      401,
-    );
-  }
-
   try {
-    const payload = (await verify(token, SERVER_SECRET, "HS256")) as AuthUser;
+    const [scheme, token] = authHeader.split(" ");
+
+    if (scheme !== "Bearer" || !token) {
+      return c.json(
+        {
+          error:
+            "Invalid authorization format. Expected: Authorization: Bearer <token>.",
+        },
+        401,
+      );
+    }
+
+    const payload = await verify(token, SERVER_SECRET, "HS256");
+    // const payload = (await verify(token, SERVER_SECRET, "HS256")) as AuthUser;
 
     if (!payload.id) {
       return c.json(

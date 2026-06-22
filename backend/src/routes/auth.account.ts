@@ -78,7 +78,7 @@ authAcountRouter.post("/signup", async (c) => {
 });
 
 //signin
-authAcountRouter.post("/api/v1/signin", async (c) => {
+authAcountRouter.post("/signin", async (c) => {
   const { DATABASE_URL, SERVER_SECRET } = env<{
     DATABASE_URL: string;
     SERVER_SECRET: string;
@@ -150,7 +150,7 @@ authAcountRouter.post("/api/v1/signin", async (c) => {
 });
 
 //refresh
-authAcountRouter.post("/api/v1/refresh", async (c) => {
+authAcountRouter.post("/refresh", async (c) => {
   const { SERVER_SECRET } = env<{
     SERVER_SECRET: string;
   }>(c);
