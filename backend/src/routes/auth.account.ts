@@ -4,7 +4,7 @@ import { verify } from "hono/jwt";
 import { createPrisma } from "../lib/prisma";
 import { hash, compare } from "bcryptjs";
 import { createAccessToken, createRefreshToken } from "../lib/jwt";
-import { signinAuthSchema, signupAuthSchema } from "../schemas/signupAuth";
+import { signinAuthSchema, signupAuthSchema } from "@sheelansu/channel-common";
 
 export const authAcountRouter = new Hono()
 

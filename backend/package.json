@@ -9,6 +9,7 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@prisma/extension-accelerate": "^3.0.1",
+    "@sheelansu/channel-common": "^1.0.1",
     "bcryptjs": "^3.0.3",
     "hono": "^4.12.25",
     "zod": "^4.4.3"

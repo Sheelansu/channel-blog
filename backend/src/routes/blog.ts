@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { createPrisma } from "../lib/prisma";
 import { env } from "hono/adapter";
-import { blogPostSchema, blogPutSchema } from "../schemas/blogZod";
+import { blogPostSchema, blogPutSchema } from "@sheelansu/channel-common";
 
 type AuthUser = {
   id: string;
