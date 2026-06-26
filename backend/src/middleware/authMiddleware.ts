@@ -1,6 +1,7 @@
 import { createMiddleware } from "hono/factory";
 import { env } from "hono/adapter";
 import { verify } from "hono/jwt";
+import { string } from "zod";
 
 type AuthUser = {
   id: string;
@@ -36,6 +37,7 @@ export const authMiddleware = createMiddleware(async (c, next) => {
 
     const payload = await verify(token, SERVER_SECRET, "HS256");
     // const payload = (await verify(token, SERVER_SECRET, "HS256")) as AuthUser;
+    const userId = string(payload.id|| "")
 
     if (!payload.id) {
       return c.json(

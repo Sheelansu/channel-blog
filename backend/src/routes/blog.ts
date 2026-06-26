@@ -76,6 +76,17 @@ blogRouter.get("/bulk", async (c) => {
   }>(c);
 
   const prisma = createPrisma(DATABASE_URL);
+  const user = c.get("user");
+
+  const userName = await prisma.user.findFirst({
+      where: {
+        id: user.id,
+      },
+      select: {
+        name: true
+      }
+    });
+
 
   const page = Number(c.req.query("page")) || 1;
   const limit = Number(c.req.query("limit")) || 10;
@@ -84,6 +95,17 @@ blogRouter.get("/bulk", async (c) => {
     prisma.post.findMany({
       skip: (page - 1) * limit,
       take: limit,
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        author: {
+          select: {
+            name: true
+          }
+        }
+
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -92,6 +114,7 @@ blogRouter.get("/bulk", async (c) => {
   ]);
 
   return c.json({
+    userName,
     page,
     limit,
     totalBlogs,
