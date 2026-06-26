@@ -1,5 +1,6 @@
 import { Avatar } from "./BlogCard"
 import { Link } from "react-router-dom"
+import logo from "../assets/logo.svg";
 
 interface AppbarProps{
     userName: string;
@@ -8,7 +9,11 @@ interface AppbarProps{
 export const Appbar = ({userName}: AppbarProps) => {
     return <div className="border-b flex justify-between px-10 py-4">
         <Link to={'/blogs'} className="flex flex-col justify-center cursor-pointer">
-                Channel
+                <img
+                    src={logo}
+                    alt="My Blog Logo"
+                    className="h-10 w-auto"
+                />
         </Link>
         <div>
             <Link to={`/publish`}>
