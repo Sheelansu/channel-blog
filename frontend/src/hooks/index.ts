@@ -37,27 +37,33 @@ export const useBlog = ({ id }: { id: string }) => {
     }
 
 }
-export const useBlogs = () => {
+export const useBlogs = (page: string) => {
     const [user, setuser] = useState("");
     const [loading, setLoading] = useState(true);
     const [blogs, setBlogs] = useState<Blog[]>([]);
+    const [totalPages, setTotalPages] = useState(1);
 
     useEffect(() => {
-        axios.get(`${BACKEND_URL}/api/v1/blog/bulk`, {
+        setLoading(true);
+
+        axios.get(`${BACKEND_URL}/api/v1/blog/bulk?page=${page}&limit=5`, {
             headers: {
                 Authorization: "Bearer " + localStorage.getItem("token")
             }
         })
-            .then(response => {
-                setBlogs(response.data.blogs);
-                setLoading(false);
-                setuser(response.data.userName.name)
-            })
-    }, [])
+        .then(response => {
+            setBlogs(response.data.blogs);
+            setuser(response.data.userName.name);
+            setTotalPages(response.data.totalPages);
+            setLoading(false);
+        });
+    }, [page]);
 
     return {
         user,
         loading,
+        totalPages,
         blogs
     }
 }
+
