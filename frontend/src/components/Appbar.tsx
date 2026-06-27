@@ -52,7 +52,7 @@ export const Appbar = ({userName}: AppbarProps) => {
                             </MenuItem>
                             <MenuItem>
                                 <a
-                                href="/signout"
+                                href="/signup"
                                 className="block px-4 py-2 text-sm text-gray-300 data-focus:bg-white/5 data-focus:outline-hidden"
                                 onClick={ClearData}
                                 >
@@ -69,5 +69,5 @@ export const Appbar = ({userName}: AppbarProps) => {
 
 function ClearData(){
     localStorage.removeItem('token');
-    localStorage.removeItem('session_token');
+    localStorage.removeItem('refresht');
 }
