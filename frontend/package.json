@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.10",
+    "@heroicons/react": "^2.2.0",
+    "@material-tailwind/react": "^2.1.10",
     "@sheelansu/channel-common": "^1.0.1",
     "@tailwindcss/vite": "^4.3.1",
     "axios": "^1.18.1",
