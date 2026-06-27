@@ -1,8 +1,9 @@
 import type { Blog } from "../hooks"
-import { Appbar } from "./Appbar"
 import { Avatar } from "./BlogCard"
+import { formatDate } from "../pages/Blogs"
 
 export const BlogBody = ({ blog }: {blog: Blog}) => {
+    const blogDate = formatDate(blog.createdAt)
     return <div>
         {/* <Appbar userName= {"Sher"}/> */}
         <div className="flex justify-center">
@@ -12,7 +13,7 @@ export const BlogBody = ({ blog }: {blog: Blog}) => {
                         {blog.title}
                     </div>
                     <div className="text-slate-500 pt-2">
-                        Post on 2nd December 2023
+                        {blogDate}
                     </div>
                     <div className="pt-4">
                         {blog.content}

@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Appbar } from "../components/Appbar"
 import { BlogCard } from "../components/BlogCard"
 import { BlogSkeleton } from "../components/BlogSkeleton";
 import { useBlogs } from "../hooks";
 
 export const Blogs = () => {
     const [page, setPage] = useState(1);
-    const { user, loading, totalPages, blogs } = useBlogs(page.toString());
+    const { loading, totalPages, blogs } = useBlogs(page.toString());
 
     const getPageNumbers = () => {
     const pages = [];
@@ -41,7 +40,6 @@ export const Blogs = () => {
 
     if (loading) {
         return <div>
-            {/* <Appbar userName="_"/>  */}
             <div  className="flex justify-center">
                 <div>
                     <BlogSkeleton />
@@ -55,7 +53,6 @@ export const Blogs = () => {
     }
 
     return <div>
-        {/* <Appbar userName= {user}/> */}
         <div  className="flex justify-center">
             <div>
                 {blogs.map(blog => <BlogCard

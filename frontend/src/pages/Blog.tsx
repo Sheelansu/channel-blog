@@ -1,4 +1,3 @@
-import { Appbar } from "../components/Appbar";
 import { BlogBody } from "../components/BlogBody";
 import { Spinner } from "../components/Spinner";
 import { useBlog } from "../hooks";
@@ -13,7 +12,6 @@ export const Blog = () => {
 
     if (loading || !blog) {
         return <div>
-            {/* <Appbar userName= {"Sher"}/> */}
         
             <div className="h-screen flex flex-col justify-center">
                 
