@@ -13,7 +13,7 @@ export const Blog = () => {
 
     if (loading || !blog) {
         return <div>
-            <Appbar userName= {"Sher"}/>
+            {/* <Appbar userName= {"Sher"}/> */}
         
             <div className="h-screen flex flex-col justify-center">
                 

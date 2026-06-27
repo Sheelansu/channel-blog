@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react"
 import axios from "axios";
 import { BACKEND_URL } from "../config";
+import { atom, useSetRecoilState } from "recoil";
+
+
 
 
 export interface Blog {
@@ -38,6 +41,12 @@ export const useBlog = ({ id }: { id: string }) => {
     }
 
 }
+
+export const userState = atom({
+  key: 'TodoList',
+  default: "",
+});
+
 export const useBlogs = (page: string) => {
     const [user, setuser] = useState("");
     const [loading, setLoading] = useState(true);
@@ -59,12 +68,19 @@ export const useBlogs = (page: string) => {
             setLoading(false);
         });
     }, [page]);
-
+    
+    const setUserState = useSetRecoilState(userState);
+    setUserState(user)
     return {
         user,
         loading,
         totalPages,
         blogs
     }
+    
 }
+
+
+
+
 

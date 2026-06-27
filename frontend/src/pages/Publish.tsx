@@ -10,7 +10,7 @@ export const Publish = () => {
     const navigate = useNavigate();
 
     return <div>
-        <Appbar userName="Sher"/>
+        {/* <Appbar userName="Sher"/> */}
         <div className="flex justify-center w-full pt-8"> 
             <div className="max-w-screen-lg w-full">
                 <input onChange={(e) => {
