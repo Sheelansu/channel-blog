@@ -1,4 +1,3 @@
-````markdown
 # 📺 Channel Blog
 
 A full-stack blogging platform built with React, Hono, Cloudflare Workers, and Prisma. The project follows a shared package architecture, where common Zod schemas and TypeScript types are published as an npm package and reused across both the frontend and backend.
